@@ -126,11 +126,11 @@
 #define MICROPY_PY_USELECT          (1)
 #define MICROPY_PY_UTIMEQ           (1)
 #define MICROPY_PY_UTIME_MP_HAL     (1)
+#define MICROPY_PY_OS_DUPTERM       (1)
 #define MICROPY_PY_MACHINE          (1)
 #define MICROPY_PY_MACHINE_PULSE    (1)
 #define MICROPY_PY_MACHINE_PIN_MAKE_NEW mp_pin_make_new
 #define MICROPY_PY_MACHINE_I2C      (1)
-#define MICROPY_PY_MACHINE_I2C_MAKE_NEW machine_hard_i2c_make_new
 #define MICROPY_PY_MACHINE_SPI      (1)
 #define MICROPY_PY_MACHINE_SPI_MSB  (SPI_FIRSTBIT_MSB)
 #define MICROPY_PY_MACHINE_SPI_LSB  (SPI_FIRSTBIT_LSB)
@@ -244,6 +244,17 @@ extern const struct _mp_obj_module_t mp_module_onewire;
 #define MICROPY_HW_MAX_UART (6)
 #endif
 
+// enable hardware I2C if there are any peripherals defined
+#define MICROPY_HW_ENABLE_HW_I2C ( \
+    defined(MICROPY_HW_I2C1_SCL) \
+    || defined(MICROPY_HW_I2C2_SCL) \
+    || defined(MICROPY_HW_I2C3_SCL) \
+    || defined(MICROPY_HW_I2C4_SCL) \
+)
+#if MICROPY_HW_ENABLE_HW_I2C
+#define MICROPY_PY_MACHINE_I2C_MAKE_NEW machine_hard_i2c_make_new
+#endif
+
 #define MP_STATE_PORT MP_STATE_VM
 
 #define MICROPY_PORT_ROOT_POINTERS \
@@ -326,6 +337,8 @@ static inline mp_uint_t disable_irq(void) {
             __WFI(); \
         } \
     } while (0);
+
+#define MICROPY_THREAD_YIELD() pyb_thread_yield()
 #else
 #define MICROPY_EVENT_POLL_HOOK \
     do { \
@@ -333,6 +346,8 @@ static inline mp_uint_t disable_irq(void) {
         mp_handle_pending(); \
         __WFI(); \
     } while (0);
+
+#define MICROPY_THREAD_YIELD()
 #endif
 
 // We need an implementation of the log2 function which is not a macro
